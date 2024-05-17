@@ -27,9 +27,26 @@ class Network(nn.Module):
             out = self.linear_layers[i](out)
         return out
 
-def train(type, epochs, hidden_layer_size, leaning_rate, features, output_features, data_file, mutation_file):
+def train_rbf(type, epochs, hidden_layer_size, return_result):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
+    features, output_features, data_file, mutation_file = [], [], '',  ''
+    if type == "triangle":
+        features = ['side_a','side_b','side_c']
+        output_features = ['triangle_type']
+        data_file = './dataset_generator/triangle_dataset/data/dataset.csv'
+        mutation_file = ''
+    elif type == "credit":
+        features = ['age','yearly_salary','year_wanted','preffed_custommer']
+        output_features = ['cat']
+        data_file = './dataset_generator/credit_dataset/data/dataset.csv'
+        mutation_file = './dataset_generator/credit_dataset/fault_injection/data/dataset.csv'
+    elif type == "heart_risk":
+        features =  ['gender', 'age', 'bmi', 'exercices', 'stress', 'smoking']
+        output_features = ['cat']
+        data_file =  './dataset_generator/heart_risk_dataset/data/dataset.csv'
+        mutation_file = './dataset_generator/heart_risk_dataset/fault_injection/data/dataset.csv'
+
     #read data
     data = pd.read_csv(data_file)
     X = data.loc[:, features]
@@ -44,6 +61,10 @@ def train(type, epochs, hidden_layer_size, leaning_rate, features, output_featur
     elif type == "credit":
         norm_X = (X-X.min())/(X.max()-X.min())
         norm_X['preffed_custommer'] = X["preffed_custommer"]
+    elif type == "heart_risk":
+        norm_X = (X-X.min())/(X.max()-X.min())
+        norm_X['gender'] = X["gender"]
+        norm_X['smoking'] = X["smoking"]
 
     #split
     X_train,X_test,y_train,y_test = train_test_split(norm_X, y, test_size = 0.2)
@@ -132,12 +153,20 @@ def train(type, epochs, hidden_layer_size, leaning_rate, features, output_featur
     
 
     #mutation testing
-    if type == "credit":
+    mutation_accuracy = 0
+    if mutation_file != '':
         data = pd.read_csv(mutation_file)
         X = data.loc[:, features]
         y = data.loc[:, ["cat", "actual_cat"]]
-        norm_X = (X-og_dataset_min)/(og_dataset_max-og_dataset_min)
-        norm_X['preffed_custommer'] = X["preffed_custommer"]
+        
+        if type == "credit":
+            norm_X = (X-og_dataset_min)/(og_dataset_max-og_dataset_min)
+            norm_X['preffed_custommer'] = X["preffed_custommer"]
+        elif type == "heart_risk":
+            norm_X = (X-og_dataset_min)/(og_dataset_max-og_dataset_min)
+            norm_X['gender'] = X["gender"]
+            norm_X['smoking'] = X["smoking"]
+
         validation_data = Data(norm_X, y)
         validationLoader = DataLoader(validation_data, batch_size=1, shuffle=False, num_workers=2)
         correct_as_correct, correct_as_incorrect, incorrect_as_correct, incorrect_as_incorrect = 0, 0, 0, 0
@@ -176,15 +205,27 @@ def train(type, epochs, hidden_layer_size, leaning_rate, features, output_featur
         print("model_is_NOT_right")
         print(incorrect_as_correct+correct_as_incorrect)
 
-    plot_actual_predicted(all_labels, all_outputs)
+    #visualize
+    if return_result == 1:
+        if type == "triangle":
+            return correct/total
+        elif type == "credit":
+            return mutation_accuracy
+        elif type == "heart_risk":
+             return mutation_accuracy
+    else:
+        plot_actual_predicted(all_labels, all_outputs)
 
-def main(type, epochs, hidden_layer_size, leaning_rate, features, output_features, data_file, mutation_file):
+def main(type, epochs, hidden_layer_size, leaning_rate):
     if __name__ == '__main__':
         freeze_support()
-        train(type, epochs, hidden_layer_size, leaning_rate, features, output_features, data_file, mutation_file)
+        train_rbf(type, epochs, hidden_layer_size, leaning_rate, 0)
 
 #triangle
-#main("triangle", 200, 200, 0.005, ['side_a','side_b','side_c'], ['triangle_type'], './dataset_generator/triangle_dataset/data/dataset.csv', '')
+#main("triangle", 200, 200, 0.005)
 
 #bank_credit
-main("credit", 200, 200, 0.005, ['age','yearly_salary','year_wanted','preffed_custommer'], ['cat'], './dataset_generator/credit_dataset/data/dataset.csv', './dataset_generator/credit_dataset/fault_injection/data/dataset.csv')
+#main("credit", 2, 200, 0.005)
+
+#heart_risk
+main("heart_risk", 50, 200, 0.005)
