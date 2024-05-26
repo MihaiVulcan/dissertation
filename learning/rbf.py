@@ -8,7 +8,7 @@ import torch.optim as optim
 
 from utils.data import Data 
 from torch_rbf import RBF, gaussian
-from visualization import plot_actual_predicted
+from visualization import plot_actual_predicted, plot_roc_curve
 
 class Network(nn.Module):
     
@@ -27,7 +27,7 @@ class Network(nn.Module):
             out = self.linear_layers[i](out)
         return out
 
-def train_rbf(type, epochs, hidden_layer_size, return_result):
+def train_rbf(type, epochs, hidden_layer_size, leaning_rate, return_result):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
     features, output_features, data_file, mutation_file = [], [], '',  ''
@@ -115,8 +115,8 @@ def train_rbf(type, epochs, hidden_layer_size, return_result):
                     outputs = model(inputs)
                     # update results
                     total += labels.size(0)
-                    error+= torch.sum(torch.sub(outputs, labels))
-                    errorabs+= torch.sum(torch.abs(torch.sub(outputs, labels)))
+                    error+= torch.sum(torch.sub(outputs, labels)/labels)
+                    errorabs+= torch.sum(torch.abs(torch.sub(outputs, labels)/labels))
                     correct += torch.sum(torch.eq(labels, torch.round(outputs)))
             print(f'EpochNo:{epoch} MRE: {error/total:.5f}\n MARE: {errorabs/total:.5f}\n accuracy:{correct/total:.5f}')
             accuracies.append(correct/total)
@@ -136,8 +136,8 @@ def train_rbf(type, epochs, hidden_layer_size, return_result):
             outputs = model(inputs)
             # update results
             total += labels.size(0)
-            error+= torch.sum(torch.sub(labels, outputs))
-            errorabs+= torch.sum(torch.abs(torch.sub(labels, outputs)))
+            error+= torch.sum(torch.sub(labels, outputs)/labels)
+            errorabs+= torch.sum(torch.abs(torch.sub(labels, outputs)/labels))
             correct += torch.sum(torch.eq(labels, torch.round(outputs)))
             all_labels.append(labels.cpu())
             all_outputs.append(outputs.cpu())
@@ -170,6 +170,7 @@ def train_rbf(type, epochs, hidden_layer_size, return_result):
         validation_data = Data(norm_X, y)
         validationLoader = DataLoader(validation_data, batch_size=1, shuffle=False, num_workers=2)
         correct_as_correct, correct_as_incorrect, incorrect_as_correct, incorrect_as_incorrect = 0, 0, 0, 0
+        all_outputs_mutation, all_labels_mutation = [], []
         with torch.no_grad():
             for data in validationLoader:
                 inputs, labels = data
@@ -181,15 +182,23 @@ def train_rbf(type, epochs, hidden_layer_size, return_result):
                 #Correct records classified as Correct
                 if outputs[0][0] == labels[0][1] and labels[0][0] == labels[0][1]:
                     correct_as_correct += 1
+                    all_outputs_mutation.append(1)
+                    all_labels_mutation.append(1)
                 #Correct records classified as Incorrect (Faulty)
                 if outputs[0][0] != labels[0][1] and labels[0][0] == labels[0][1]:
                     correct_as_incorrect += 1
+                    all_outputs_mutation.append(1)
+                    all_labels_mutation.append(0)
                 #Incorrect (Faulty) records classified as Correct
                 if outputs[0][0] != labels[0][1] and outputs[0][0] == labels[0][0]:
                     incorrect_as_correct += 1
+                    all_outputs_mutation.append(0)
+                    all_labels_mutation.append(1)
                 #Incorrect (Faulty) records classified as Incorrect (Faulty)
                 if outputs[0][0] != labels[0][0] and labels[0][1] != labels[0][0]:
                     incorrect_as_incorrect += 1
+                    all_outputs_mutation.append(0)
+                    all_labels_mutation.append(0)
         print("correct as correct: ")
         print(correct_as_correct)
         print("correct as incorect: ")
@@ -204,6 +213,9 @@ def train_rbf(type, epochs, hidden_layer_size, return_result):
         print(correct_as_correct+incorrect_as_incorrect)
         print("model_is_NOT_right")
         print(incorrect_as_correct+correct_as_incorrect)
+
+        if return_result == 0:
+            plot_roc_curve(all_labels_mutation, all_outputs_mutation)
 
     #visualize
     if return_result == 1:
@@ -225,7 +237,7 @@ def main(type, epochs, hidden_layer_size, leaning_rate):
 #main("triangle", 200, 200, 0.005)
 
 #bank_credit
-#main("credit", 2, 200, 0.005)
+#main("credit", 200, 200, 0.005)
 
 #heart_risk
-main("heart_risk", 50, 200, 0.005)
+main("heart_risk", 200, 200, 0.005)

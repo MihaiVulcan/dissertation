@@ -4,8 +4,8 @@ def heart_risk_calculator_fault_4 (gender, age, bmi, exercices, stress, smoking)
     if gender == 0:
         if age < 30:
             risk = risk
-        elif age > 50:
-            risk = risk + 1 # > insted of <
+        elif age > 50: # > insted of <
+            risk = risk + 1 
         elif age < 65:
             risk = risk + 3
         elif age <= 80:

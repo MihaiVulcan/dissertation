@@ -1,7 +1,7 @@
 #age (20, 65), yearly_salary(10000, 1000000), year_wanted(1, 30), preffed_custommer{0, 1}
-def credit_fault_4(age, yearly_salary, years_wanted, preffed_custommer):
+def credit_fault_4(age, yearly_salary, years_wanted, preferred_customer):
     max_pay_year = 0
-    if preffed_custommer == 1: # inversed if
+    if preferred_customer == 1: # inversed if
         monthly_salary = yearly_salary / 12
         min_month_salary = 0
         if age < 30:
@@ -23,7 +23,7 @@ def credit_fault_4(age, yearly_salary, years_wanted, preffed_custommer):
 
         max_pay_year = max_pay_month * 12
 
-    elif preffed_custommer == 0:
+    elif preferred_customer == 0:
         monthly_salary = yearly_salary / 12
         if age < 30:
             min_month_salary = monthly_salary*0.9
