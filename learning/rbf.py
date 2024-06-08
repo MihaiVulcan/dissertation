@@ -234,10 +234,10 @@ def main(type, epochs, hidden_layer_size, leaning_rate):
         train_rbf(type, epochs, hidden_layer_size, leaning_rate, 0)
 
 #triangle
-#main("triangle", 200, 200, 0.005)
+#main("triangle", 100, 200, 0.005)
 
 #bank_credit
-#main("credit", 200, 200, 0.005)
+#main("credit", 100, 200, 0.005)
 
 #heart_risk
-main("heart_risk", 200, 200, 0.005)
+main("heart_risk", 100, 200, 0.005)
