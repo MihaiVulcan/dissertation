@@ -230,10 +230,10 @@ def main(type, epochs, hidden_layer_size, leaning_rate):
         train_ann(type, epochs, hidden_layer_size, leaning_rate, 0)
 
 #triangle
-#print(main("triangle", 50, 24, 0.001))
+print(main("triangle", 50, 24, 0.001))
 
 #bank_credit
-main("credit", 100, 50, 0.001)
+#main("credit", 100, 50, 0.001)
 
 #heart_risk
 #main("heart_risk", 100, 50, 0.001)
